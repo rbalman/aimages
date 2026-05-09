@@ -2,6 +2,7 @@
   "name": "eva-astro-starter",
   "type": "module",
   "version": "0.0.1",
+  "packageManager": "pnpm@11.0.9",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "prepare": "husky",
