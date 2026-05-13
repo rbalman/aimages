@@ -1,0 +1,66 @@
+---
+import { getImage } from "astro:assets";
+import type { ImageMetadata } from "astro";
+import BaseHead from "@/components/BaseHead.astro";
+import Gallery from "@/components/Gallery.tsx";
+import {
+  defaultGalleryImageDetails,
+  galleryImageDetails,
+} from "@/data/gallery";
+
+const title = "AImages by Balman Rawat";
+const description =
+  "A personal gallery of AI-generated images, experiments, and visual studies by Balman Rawat.";
+
+const imageFiles = import.meta.glob<{ default: ImageMetadata }>(
+  "/src/assets/*"
+);
+const imageData = await Promise.all(
+  Object.keys(imageFiles).sort().map(async (path, index) => {
+    const imageModule = await imageFiles[path]();
+    const image = imageModule.default;
+    const fileName = path.split("/").at(-1) ?? "";
+    const details = galleryImageDetails[fileName] ?? {
+      ...defaultGalleryImageDetails,
+      title: `Gallery Image ${String(index + 1).padStart(2, "0")}`,
+    };
+
+    const optimizedFull = await getImage({
+      src: image,
+      width: 1200,
+    });
+
+    const optimizedThumb = await getImage({
+      src: image,
+      width: 750,
+      format: "webp",
+    });
+
+    return {
+      src: optimizedFull.src,
+      thumbnail: optimizedThumb.src,
+      title: details.title,
+      caption: details.caption,
+      details: details.details,
+      alt: details.alt ?? details.title,
+      downloadName: `balman-rawat-${fileName}`,
+    };
+  })
+);
+---
+
+<!doctype html>
+<html lang="en">
+  <BaseHead
+    title={title}
+    description={description}
+    author={'Balman Rawat'}
+    og={'og-image.jpg'}
+  />
+
+  <body class="is-preload">
+    <div id="wrapper">
+      <Gallery images={imageData} client:load />
+    </div>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "aimages",
+  "version": "26.03.22",
+  "private": true,
+  "license": "CCA-3.0",
+  "author": {
+    "name": "Balman Rawat",
+    "url": "https://balmanrawat.com.np"
+  },
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
+    "preview": "astro preview",
+    "start": "astro dev",
+    "format": "oxfmt",
+    "lint": "oxlint",
+    "check": "oxlint && oxfmt"
+  },
+  "dependencies": {
+    "@astrojs/react": "^5.0.4",
+    "@tailwindcss/vite": "^4.3.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "astro": "^6.3.1",
+    "fontaine": "^0.8.0",
+    "oxfmt": "^0.48.0",
+    "oxlint": "^1.63.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4.3.0"
+  }
+}

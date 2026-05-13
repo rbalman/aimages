@@ -1,0 +1,224 @@
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
+interface ImageData {
+  src: string;
+  thumbnail: string;
+  title: string;
+  caption: string;
+  details: string;
+  alt: string;
+  downloadName: string;
+}
+
+interface GalleryProps {
+  images: ImageData[];
+}
+
+const Gallery: React.FC<GalleryProps> = ({ images }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const timer = setTimeout(() => {
+      document.body.classList.remove("is-preload");
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("modal-active");
+    } else {
+      document.body.classList.remove("modal-active");
+    }
+  }, [isOpen]);
+
+  const openLightbox = (index: number) => {
+    setCurrentIndex(index);
+    setIsOpen(true);
+    setLoading(true);
+  };
+
+  const closeLightbox = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  const navigateNext = useCallback(
+    (e?: React.MouseEvent | KeyboardEvent) => {
+      if (e && "stopPropagation" in e) e.stopPropagation();
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+      setLoading(true);
+    },
+    [images.length],
+  );
+
+  const navigatePrev = useCallback(
+    (e?: React.MouseEvent | KeyboardEvent) => {
+      if (e && "stopPropagation" in e) e.stopPropagation();
+      setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+      setLoading(true);
+    },
+    [images.length],
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowRight") navigateNext(e);
+      if (e.key === "ArrowLeft") navigatePrev(e);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, navigateNext, navigatePrev, closeLightbox]);
+
+  const Lightbox = () => {
+    const currentImage = images[currentIndex];
+    const imageRef = useRef<HTMLImageElement>(null);
+    const touchStartX = useRef<number | null>(null);
+
+    const handleImageLoad = () => {
+      setLoading(false);
+    };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX;
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+      if (touchStartX.current === null) return;
+      const touchEndX = e.changedTouches[0].clientX;
+      const diff = touchStartX.current - touchEndX;
+
+      if (diff > 50) {
+        navigateNext();
+      } else if (diff < -50) {
+        navigatePrev();
+      }
+      touchStartX.current = null;
+    };
+
+    return (
+      <div className="poptrox-overlay">
+        <button
+          type="button"
+          className="absolute inset-0 h-full w-full cursor-pointer border-0 bg-transparent"
+          onClick={closeLightbox}
+          aria-label="Close"
+        />
+        <div
+          className={`poptrox-popup ${loading ? "loading" : ""}`}
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.stopPropagation();
+            }
+          }}
+          tabIndex={-1}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="pic">
+            <img
+              ref={imageRef}
+              src={currentImage.src}
+              alt={currentImage.alt}
+              className="lightbox-img"
+              style={{
+                opacity: loading ? 0 : 1,
+              }}
+              onLoad={handleImageLoad}
+            />
+          </div>
+
+          {loading && <div className="loader" />}
+
+          {!loading && (
+            <>
+              <div className="lightbox-details">
+                <div>
+                  <h2>{currentImage.title}</h2>
+                  <p>{currentImage.details}</p>
+                </div>
+                <a
+                  className="download-button"
+                  href={currentImage.src}
+                  download={currentImage.downloadName}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={`Download ${currentImage.title}`}
+                >
+                  Download
+                </a>
+              </div>
+              <button
+                type="button"
+                className="closer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeLightbox();
+                }}
+                aria-label="Close"
+              />
+              <button
+                type="button"
+                className="nav-previous"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigatePrev();
+                }}
+                aria-label="Previous"
+              />
+              <button
+                type="button"
+                className="nav-next"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateNext();
+                }}
+                aria-label="Next"
+              />
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <div id="main">
+        {images.map((img, index) => (
+          <article className="thumb" key={img.src}>
+            <a
+              className="image"
+              href={img.src}
+              onClick={(e) => {
+                e.preventDefault();
+                openLightbox(index);
+              }}
+              style={{
+                backgroundImage: `url(${img.thumbnail})`,
+              }}
+            >
+              <img src={img.thumbnail} alt={img.alt} className="thumb-img" />
+              <span className="thumb-details">
+                <strong>{img.title}</strong>
+                <span>{img.caption}</span>
+              </span>
+            </a>
+          </article>
+        ))}
+      </div>
+
+      {isOpen && isMounted && createPortal(<Lightbox />, document.body)}
+    </>
+  );
+};
+
+export default Gallery;
