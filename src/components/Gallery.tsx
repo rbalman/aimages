@@ -254,7 +254,7 @@ const Gallery: React.FC<GalleryProps> = ({ images }) => {
     <>
       <header className="site-intro" aria-label="Site information">
         <h1>aimages</h1>
-        <p>AI-generated images using flux2-klein-4b model.</p>
+        <p>AI-generated images with flux2-klein-4b model.</p>
       </header>
 
       <div id="main">
