@@ -159,6 +159,18 @@
     @apply visible top-1/2 opacity-25 transition-opacity delay-500 duration-1000 ease-out;
   }
 
+  .site-intro {
+    @apply pointer-events-none fixed top-5 left-5 z-10 max-w-[min(22rem,calc(100vw-2.5rem))] text-left;
+
+    h1 {
+      @apply m-0 text-xl leading-none font-normal tracking-[0.1em] text-white lowercase;
+    }
+
+    p {
+      @apply mt-2 mb-0 text-sm leading-snug text-white/80;
+    }
+  }
+
   #main {
     @apply flex h-full w-full flex-wrap overflow-x-hidden overflow-y-auto transition-[filter] duration-500 ease-in-out;
 
@@ -255,6 +267,16 @@
       @apply h-[calc(28.57143vh-1.33333em)] min-h-[18em];
     }
   }
+
+  @media screen and (max-width: 480px) {
+    .site-intro {
+      @apply top-4 left-4;
+    }
+
+    .site-intro h1 {
+      @apply text-lg;
+    }
+  }
 }
 
 /* Lightbox specific styles that are easier to keep here for now */
@@ -296,8 +318,12 @@
     }
   }
 
+  .lightbox-actions {
+    @apply flex shrink-0 items-center gap-2;
+  }
+
   .download-button {
-    @apply shrink-0 rounded-sm border border-white/25 bg-white/10 px-4 py-2 text-xs leading-none font-normal tracking-[0.08em] text-white uppercase backdrop-blur transition-[background-color,border-color] duration-200;
+    @apply shrink-0 cursor-pointer rounded-sm border border-white/25 bg-white/10 px-4 py-2 text-xs leading-none font-normal tracking-[0.08em] text-white uppercase backdrop-blur transition-[background-color,border-color] duration-200;
 
     &:hover,
     &:focus-visible {
@@ -334,6 +360,10 @@
 
   .poptrox-popup .lightbox-details {
     @apply static mt-4 flex-col gap-3 px-4;
+  }
+
+  .poptrox-popup .lightbox-actions {
+    @apply flex-wrap;
   }
 
   .poptrox-popup .closer {

@@ -2,7 +2,7 @@
   "name": "aimages",
   "version": "26.03.22",
   "private": true,
-  "license": "CCA-3.0",
+  "license": "MIT",
   "author": {
     "name": "Balman Rawat",
     "url": "https://balmanrawat.com.np"

@@ -2,11 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 interface ImageData {
+  id: string;
   src: string;
   thumbnail: string;
-  title: string;
   caption: string;
-  details: string;
+  prompt: string;
   alt: string;
   downloadName: string;
 }
@@ -20,6 +20,40 @@ const Gallery: React.FC<GalleryProps> = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const getImageIndexFromUrl = useCallback(() => {
+    if (typeof window === "undefined") return -1;
+    const imageId = new URL(window.location.href).searchParams.get("image");
+    if (!imageId) return -1;
+    return images.findIndex((image) => image.id === imageId);
+  }, [images]);
+
+  const getImageUrl = useCallback(
+    (index: number) => {
+      if (typeof window === "undefined") return "";
+      const url = new URL(window.location.href);
+      url.searchParams.set("image", images[index].id);
+      url.hash = "";
+      return url.toString();
+    },
+    [images],
+  );
+
+  const clearImageUrl = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("image");
+    window.history.replaceState({}, "", url);
+  }, []);
+
+  const setImageUrl = useCallback(
+    (index: number) => {
+      const url = getImageUrl(index);
+      if (!url) return;
+      window.history.replaceState({}, "", url);
+    },
+    [getImageUrl],
+  );
 
   useEffect(() => {
     setIsMounted(true);
@@ -37,32 +71,56 @@ const Gallery: React.FC<GalleryProps> = ({ images }) => {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    const openImageFromUrl = () => {
+      const index = getImageIndexFromUrl();
+      if (index === -1) return;
+      setCurrentIndex(index);
+      setIsOpen(true);
+      setLoading(true);
+    };
+
+    openImageFromUrl();
+    window.addEventListener("popstate", openImageFromUrl);
+    return () => window.removeEventListener("popstate", openImageFromUrl);
+  }, [getImageIndexFromUrl]);
+
   const openLightbox = (index: number) => {
     setCurrentIndex(index);
     setIsOpen(true);
     setLoading(true);
+    setImageUrl(index);
   };
 
   const closeLightbox = useCallback(() => {
     setIsOpen(false);
-  }, []);
+    clearImageUrl();
+  }, [clearImageUrl]);
 
   const navigateNext = useCallback(
     (e?: React.MouseEvent | KeyboardEvent) => {
       if (e && "stopPropagation" in e) e.stopPropagation();
-      setCurrentIndex((prev) => (prev + 1) % images.length);
+      setCurrentIndex((prev) => {
+        const next = (prev + 1) % images.length;
+        setImageUrl(next);
+        return next;
+      });
       setLoading(true);
     },
-    [images.length],
+    [images.length, setImageUrl],
   );
 
   const navigatePrev = useCallback(
     (e?: React.MouseEvent | KeyboardEvent) => {
       if (e && "stopPropagation" in e) e.stopPropagation();
-      setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+      setCurrentIndex((prev) => {
+        const next = (prev - 1 + images.length) % images.length;
+        setImageUrl(next);
+        return next;
+      });
       setLoading(true);
     },
-    [images.length],
+    [images.length, setImageUrl],
   );
 
   useEffect(() => {
@@ -143,18 +201,20 @@ const Gallery: React.FC<GalleryProps> = ({ images }) => {
             <>
               <div className="lightbox-details">
                 <div>
-                  <h2>{currentImage.title}</h2>
-                  <p>{currentImage.details}</p>
+                  <h2>{currentImage.caption}</h2>
+                  <p>{currentImage.prompt}</p>
                 </div>
-                <a
-                  className="download-button"
-                  href={currentImage.src}
-                  download={currentImage.downloadName}
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`Download ${currentImage.title}`}
-                >
-                  Download
-                </a>
+                <div className="lightbox-actions">
+                  <a
+                    className="download-button"
+                    href={currentImage.src}
+                    download={currentImage.downloadName}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`Download ${currentImage.caption}`}
+                  >
+                    Download
+                  </a>
+                </div>
               </div>
               <button
                 type="button"
@@ -192,6 +252,11 @@ const Gallery: React.FC<GalleryProps> = ({ images }) => {
 
   return (
     <>
+      <header className="site-intro" aria-label="Site information">
+        <h1>aimages</h1>
+        <p>AI-generated images using flux2-klein-4b model.</p>
+      </header>
+
       <div id="main">
         {images.map((img, index) => (
           <article className="thumb" key={img.src}>
@@ -208,8 +273,7 @@ const Gallery: React.FC<GalleryProps> = ({ images }) => {
             >
               <img src={img.thumbnail} alt={img.alt} className="thumb-img" />
               <span className="thumb-details">
-                <strong>{img.title}</strong>
-                <span>{img.caption}</span>
+                <strong>{img.caption}</strong>
               </span>
             </a>
           </article>
